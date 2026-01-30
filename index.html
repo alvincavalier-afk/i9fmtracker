@@ -3,240 +3,292 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>i9 Sports FM 2.0 Diagnostic Tracker</title>
+    <title>FM 2.0 Issue & Status Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         .issue-card:hover { transform: translateY(-2px); transition: all 0.2s; }
-        .category-tab.active { border-bottom: 3px solid #ab220f; color: #ab220f; font-weight: bold; }
+        .tab-active { border-bottom: 4px solid white; font-weight: bold; opacity: 1 !important; }
+        .priority-high { border-left: 8px solid #ef4444; background-color: #fef2f2; }
+        .priority-med { border-left: 8px solid #f59e0b; }
+        .pulse-red { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        
+        /* Category Colors */
+        .cat-home { border-top-color: #3b82f6; } 
+        .cat-mobile { border-top-color: #64748b; } 
+        .cat-data { border-top-color: #f59e0b; } 
+        .cat-money { border-top-color: #10b981; } 
+        .cat-ops { border-top-color: #8b5cf6; } 
     </style>
 </head>
-<body class="bg-slate-50 font-sans leading-normal tracking-normal text-slate-900">
+<body class="bg-slate-100 font-sans text-slate-900">
 
-    <nav class="bg-blue-900 p-4 shadow-lg sticky top-0 z-50">
-        <div class="container mx-auto flex flex-col md:flex-row justify-between items-center text-white">
-            <div class="flex items-center space-x-3 mb-4 md:mb-0">
-                <div class="bg-white p-1 rounded">
-                    <span class="text-blue-900 font-black text-xl px-1">i9</span>
+    <nav class="bg-blue-900 text-white shadow-xl sticky top-0 z-50">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row justify-between items-center py-4">
+                <div class="flex items-center space-x-3 mb-4 md:mb-0">
+                    <div class="bg-white p-1 rounded">
+                        <span class="text-blue-900 font-black text-xl px-1">i9</span>
+                    </div>
+                    <h1 class="text-xl font-bold uppercase tracking-widest">FM 2.0 Issue & Status Tracker</h1>
                 </div>
-                <h1 class="text-xl font-bold uppercase tracking-wider">FM 2.0 Diagnostic Tracker</h1>
-            </div>
-            <div class="flex items-center space-x-6">
-                <div class="text-center">
-                    <p class="text-xs uppercase opacity-75 font-bold">Total Logs</p>
-                    <p id="master-tally" class="text-2xl font-black">0</p>
+                <div class="flex space-x-8">
+                    <button onclick="switchView('report')" id="nav-report" class="tab-active opacity-75 hover:opacity-100 py-2 uppercase text-sm tracking-wider">Report Issue</button>
+                    <button onclick="switchView('status')" id="nav-status" class="opacity-75 hover:opacity-100 py-2 uppercase text-sm tracking-wider">Status Tracker</button>
                 </div>
-                <button onclick="exportToCSV()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded shadow-md text-sm uppercase">
-                    Export to CSV
-                </button>
             </div>
         </div>
     </nav>
 
+    <div id="exec-summary" class="bg-white border-b border-slate-200 p-4">
+        <div class="container mx-auto grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
+            <div>
+                <p class="text-xs text-slate-500 uppercase font-bold text-red-600">High Priority</p>
+                <p id="stat-high" class="text-2xl font-black text-red-600">0</p>
+            </div>
+            <div>
+                <p class="text-xs text-slate-500 uppercase font-bold">Active Issues</p>
+                <p id="stat-pending" class="text-2xl font-black text-blue-900">0</p>
+            </div>
+            <div>
+                <p class="text-xs text-slate-500 uppercase font-bold">Resolved</p>
+                <p id="stat-resolved" class="text-2xl font-black text-emerald-500">0</p>
+            </div>
+             <div>
+                <p class="text-xs text-slate-500 uppercase font-bold">Total Logs</p>
+                <p id="stat-total" class="text-2xl font-black text-slate-400">0</p>
+            </div>
+            <button onclick="exportToCSV()" class="bg-slate-800 hover:bg-black text-white font-bold rounded shadow-md text-xs uppercase px-4 py-2 my-auto">
+                Export CSV
+            </button>
+        </div>
+    </div>
+
     <main class="container mx-auto p-4 md:p-8">
         
-        <div class="bg-white p-6 rounded-xl shadow-md mb-8">
-            <input type="text" id="searchInput" onkeyup="filterIssues()" placeholder="Search symptoms (e.g. 'spinner', 'double charge')..." 
-                   class="w-full p-4 border-2 border-slate-200 rounded-lg focus:border-blue-500 outline-none text-lg">
-            
-            <div id="categoryTabs" class="flex flex-wrap gap-4 mt-6 text-sm font-medium text-slate-500 uppercase tracking-tight">
+        <div id="view-report">
+            <div class="bg-white p-6 rounded-xl shadow-md mb-8 border-b-4 border-blue-900">
+                <label class="block text-sm font-bold text-slate-600 mb-2 italic">Quick Search: Type your problem (e.g., "refund", "registration", "slow")</label>
+                <input type="text" id="searchInput" onkeyup="filterIssues()" placeholder="Search symptoms to find the right card..." 
+                       class="w-full p-4 border-2 border-slate-200 rounded-lg focus:border-blue-500 outline-none text-lg">
+            </div>
+
+            <div id="issueGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 </div>
         </div>
 
-        <div id="issueGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div id="view-status" class="hidden">
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-slate-800 text-white text-xs uppercase tracking-widest">
+                            <tr>
+                                <th class="p-4">Priority</th>
+                                <th class="p-4">Age / DTG</th>
+                                <th class="p-4">Issue / Location</th>
+                                <th class="p-4">AD/APD</th>
+                                <th class="p-4">Office Status</th>
+                                <th class="p-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="statusTableBody" class="divide-y divide-slate-200 text-sm">
+                            </tbody>
+                    </table>
+                </div>
+                <div id="empty-state" class="p-20 text-center text-slate-400 hidden">No active issues recorded.</div>
             </div>
+        </div>
     </main>
 
     <script>
         const fmIssues = [
-            { id: 1, category: "Home / Stats", symptom: "Broken Chart Image", flaw: "Server-side chart generator (ChartImg.axd) timed out." },
-            { id: 2, category: "Home / Stats", symptom: "PY Data Mismatch", flaw: "Logic failed to align the 2026 calendar with 2025." },
-            { id: 3, category: "Home / Stats", symptom: "Revenue Update Lag", flaw: "Revenue cache only refreshes once per hour." },
-            { id: 4, category: "Home / Stats", symptom: "Infinite Spinner", flaw: "UpdatePanel hang; server/client communication break." },
-            { id: 5, category: "Home / Stats", symptom: "Franchise Ghosting", flaw: "Session cookie for FranchiseID didn't overwrite." },
-            { id: 6, category: "Mobile/Touch", symptom: "Side-Scroll Struggle", flaw: "Tables fixed at 920px; not responsive." },
-            { id: 7, category: "Mobile/Touch", symptom: "Fat-Finger Fumble", flaw: "Rows too thin for touchscreens." },
-            { id: 8, category: "Mobile/Touch", symptom: "Keyboard Cover-Up", flaw: "Missing 'Scroll-into-view' code for virtual keyboards." },
-            { id: 9, category: "Mobile/Touch", symptom: "Stuck Hamburger", flaw: "mmenu library incompatible with modern gestures." },
-            { id: 10, category: "Mobile/Touch", symptom: "Pinch-to-Zoom Fatigue", flaw: "Missing Viewport scaling tags." },
-            { id: 11, category: "Mobile/Touch", symptom: "Tiny Calendar Fail", flaw: "Legacy desktop calendar tool used instead of native picker." },
-            { id: 12, category: "Mobile/Touch", symptom: "Orientation Shift", flaw: "Hard-coded overlay coordinates." },
-            { id: 13, category: "Mobile/Touch", symptom: "Hover Trap", flaw: "Touchscreens have no hover state for menus." },
-            { id: 14, category: "Mobile/Touch", symptom: "Slow Script Load", flaw: "Browser loading 15+ outdated JS files." },
-            { id: 15, category: "Mobile/Touch", symptom: "Drag-and-Drop Fail", flaw: "Mouse-down events ignore touch inputs." },
-            { id: 16, category: "Data / Forms", symptom: "Back-Button Trap", flaw: "ViewState security sequence broken." },
-            { id: 17, category: "Data / Forms", symptom: "30-Min Kick", flaw: "No 'stay alive' heartbeat for server sessions." },
-            { id: 18, category: "Data / Forms", symptom: "The Ghost Update", flaw: "Loaded from browser cache instead of database." },
-            { id: 19, category: "Data / Forms", symptom: "Tab-Key Jump", flaw: "Broken Tab Index in HTML." },
-            { id: 20, category: "Data / Forms", symptom: "Search Sensitivity", flaw: "Logic doesn't trim trailing spaces." },
-            { id: 21, category: "Data / Forms", symptom: "Auto-Fill Chaos", flaw: "Generic Field IDs confusing Chrome logic." },
-            { id: 22, category: "Data / Forms", symptom: "Form Reset Fail", flaw: "PostBack failed to wipe form memory." },
-            { id: 23, category: "Data / Forms", symptom: "Required Field Lie", flaw: "Mismatch between Frontend/Backend validation." },
-            { id: 24, category: "Data / Forms", symptom: "Timeout on Export", flaw: "Dataset exceeds server memory limits." },
-            { id: 25, category: "Data / Forms", symptom: "Dropdown Desync", flaw: "Trigger failed to refresh secondary list." },
-            { id: 26, category: "Financials", symptom: "Double Charge", flaw: "Pay button stayed active after first click." },
-            { id: 27, category: "Financials", symptom: "Split Payment Fail", flaw: "Cart logic restricted to one transaction ID." },
-            { id: 28, category: "Financials", symptom: "Sibling Discount Skip", flaw: "Siloed cart logic failed child count." },
-            { id: 29, category: "Financials", symptom: "1-Cent Offset", flaw: "Floating point math error in legacy code." },
-            { id: 30, category: "Financials", symptom: "Zombie Promo", flaw: "Calculation logic failed to reset on deletion." },
-            { id: 31, category: "Financials", symptom: "Waitlist Bypass", flaw: "URL vulnerability; direct link access." },
-            { id: 32, category: "Financials", symptom: "Tokenization Lag", flaw: "Bank/FM API handshake timeout." },
-            { id: 33, category: "Financials", symptom: "Revenue Mis-mapping", flaw: "Ledger points to wrong database bucket." },
-            { id: 34, category: "Financials", symptom: "Expired Quote", flaw: "Payment session expired during entry." },
-            { id: 35, category: "Financials", symptom: "Multi-Child Cap Fail", flaw: "Counter logic missed 'Active' status." },
-            { id: 36, category: "Ops / Reports", symptom: "HTML Email Gore", flaw: "Missing MIME headers in legacy mailer." },
-            { id: 37, category: "Ops / Reports", symptom: "Audit History Void", flaw: "Change-tracking logging not implemented." },
-            { id: 38, category: "Ops / Reports", symptom: "Label Alignment Warp", flaw: "Modern DPI vs fixed CSS positioning." },
-            { id: 39, category: "Ops / Reports", symptom: "Roster Email Delay", flaw: "Clogged server-side mail queue." },
-            { id: 40, category: "Ops / Reports", symptom: "Weather Alert Fail", flaw: "SMS gateway bulk-send timeout." },
-            { id: 41, category: "Ops / Reports", symptom: "Help Doc 'Black Screen'", flaw: "Azure storage permission error." },
-            { id: 42, category: "Ops / Reports", symptom: "Listen 360 Gap", flaw: "Listen360 API bridge sync failure." },
-            { id: 43, category: "Ops / Reports", symptom: "Alpha Roster Lag", flaw: "Unindexed database query." },
-            { id: 44, category: "Ops / Reports", symptom: "Training Result Gap", flaw: "LMS success message blocked by firewall." },
-            { id: 45, category: "Ops / Reports", symptom: "Schedule Builder Hang", flaw: "Memory leak in legacy JS builder." },
-            { id: 46, category: "Ops / Reports", symptom: "Job Posting Delay", flaw: "24-hour cache refresh cycle." },
-            { id: 47, category: "Ops / Reports", symptom: "Dynamic URL Failure", flaw: "URL rewriter doesn't handle modern characters." },
-            { id: 48, category: "Ops / Reports", symptom: "Logo Warp", flaw: "Fixed width/height CSS rules." },
-            { id: 49, category: "Ops / Reports", symptom: "Waitlist Opp Report Fail", flaw: "Query missed 'Archive' season filter." },
-            { id: 50, category: "Ops / Reports", symptom: "Jersey Status Desync", flaw: "UI update succeeded but DB failed." },
-            { id: 51, category: "Security/Tech", symptom: "Not Secure Warning", flaw: "Outdated TLS 1.0/1.1 protocol." },
-            { id: 52, category: "Security/Tech", symptom: "Yellow Screen of Death", flaw: "Custom Errors disabled; code leakage." },
-            { id: 53, category: "Security/Tech", symptom: "Permanent Login", flaw: "Cookie lacks expiration date." },
-            { id: 54, category: "Security/Tech", symptom: "ID Swap Vulnerability", flaw: "Insecure Direct Object Reference (IDOR)." },
-            { id: 55, category: "Security/Tech", symptom: "Mixed Content Warning", flaw: "HTTP assets loaded on HTTPS site." },
-            { id: 56, category: "Security/Tech", symptom: "Password Reset Loop", flaw: "SMTP server blacklisted by Gmail/Outlook." },
-            { id: 57, category: "Security/Tech", symptom: "No Multi-Factor (MFA)", flaw: "Legacy architecture lacks identity providers." },
-            { id: 58, category: "Security/Tech", symptom: "Directory Peek", flaw: "Directory Browsing enabled on server." },
-            { id: 59, category: "Security/Tech", symptom: "Zebra Table Glitch", flaw: "Sorting script fails to re-paint CSS." },
-            { id: 60, category: "Security/Tech", symptom: "Unresponsive Cancel", flaw: "jQuery version conflict." },
-            { id: 61, category: "Registration", symptom: "Waiver Missing", flaw: "E-Signature save failed in final step." },
-            { id: 62, category: "Registration", symptom: "Playing Age Error", flaw: "Wrong year used in cutoff logic." },
-            { id: 63, category: "Registration", symptom: "Prior Reg Count Fail", flaw: "MemberID/RegistrationID link failed." },
-            { id: 64, category: "Registration", symptom: "Starts Date Desync", flaw: "Pulled Season Start vs Program Start." },
-            { id: 65, category: "Registration", symptom: "Venue Overlap", flaw: "Conflict checker ignored in Rapid Entry." },
-            { id: 66, category: "League Mgmt", symptom: "Team Code Void", flaw: "DB update missed the UI GridView." },
-            { id: 67, category: "League Mgmt", symptom: "Roster Print Cutoff", flaw: "Print CSS forced early page break." },
-            { id: 68, category: "League Mgmt", symptom: "Score Post Lag", flaw: "Sync job stuck between FM and App." },
-            { id: 69, category: "League Mgmt", symptom: "Coach Recruitment Lie", flaw: "Failed to filter 'Declined' volunteers." },
-            { id: 70, category: "League Mgmt", symptom: "Background Check Hang", flaw: "Callback from screening company failed." },
-            { id: 71, category: "General", symptom: "Fragmented Reports", flaw: "Old relational database silos." },
-            { id: 72, category: "General", symptom: "Blue Line Layout Break", flaw: "Absolute positioning breaks on small screens." },
-            { id: 73, category: "General", symptom: "Slow Script Lag", flaw: "Browser busy processing synchronous old code." },
-            { id: 74, category: "General", symptom: "SSN/DOB Leak", flaw: "Sensitive info carried in ViewState." },
-            { id: 75, category: "General", symptom: "FM 3.0 Fatigue", flaw: "Accumulated Technical Debt." }
+            { id: 26, category: "Financials", color: "cat-money", symptom: "Double Charge / Refund Issue", flaw: "System charges parent twice or refund button fails.", priority: "High" },
+            { id: 61, category: "Registration", color: "cat-money", symptom: "Registration Blocked", flaw: "Parents cannot complete sign-up or waiver doesn't save.", priority: "High" },
+            { id: 45, category: "Ops / Reports", color: "cat-ops", symptom: "Roster Builder Crash", flaw: "System crashes when trying to assign players to teams.", priority: "High" },
+            { id: 40, category: "Ops / Reports", color: "cat-ops", symptom: "Communication Failure", flaw: "Bulk emails or SMS alerts not sending to coaches/parents.", priority: "High" },
+            { id: 4, category: "General", color: "cat-home", symptom: "System Downtime / Spinner", flaw: "Entire system is offline or stuck on a loading screen.", priority: "High" },
+            { id: 6, category: "Mobile/Touch", color: "cat-mobile", symptom: "Mobile Layout Break", flaw: "Buttons are missing or cut off on mobile phones.", priority: "Med" },
+            { id: 17, category: "General", color: "cat-home", symptom: "Login Kickout", flaw: "System logs you out automatically every few minutes.", priority: "Med" }
         ];
 
-        let logs = JSON.parse(localStorage.getItem('i9Logs')) || [];
-        let currentFilter = 'All';
+        let logs = JSON.parse(localStorage.getItem('i9FMTrackerLogs_v2')) || [];
 
         function init() {
-            renderTabs();
             renderIssues();
-            updateMasterTally();
+            updateStats();
         }
 
-        function renderTabs() {
-            const categories = ['All', ...new Set(fmIssues.map(i => i.category))];
-            const container = document.getElementById('categoryTabs');
-            container.innerHTML = categories.map(cat => `
-                <button onclick="setFilter('${cat}')" class="category-tab pb-2 ${currentFilter === cat ? 'active' : ''}">
-                    ${cat}
-                </button>
-            `).join('');
+        function switchView(view) {
+            document.getElementById('view-report').classList.toggle('hidden', view !== 'report');
+            document.getElementById('view-status').classList.toggle('hidden', view !== 'status');
+            document.getElementById('nav-report').classList.toggle('tab-active', view === 'report');
+            document.getElementById('nav-status').classList.toggle('tab-active', view === 'status');
+            if(view === 'status') renderStatusTable();
         }
 
         function renderIssues() {
             const search = document.getElementById('searchInput').value.toLowerCase();
             const grid = document.getElementById('issueGrid');
             
-            const filtered = fmIssues.filter(i => {
-                const matchesSearch = i.symptom.toLowerCase().includes(search) || i.category.toLowerCase().includes(search);
-                const matchesCat = currentFilter === 'All' || i.category === currentFilter;
-                return matchesSearch && matchesCat;
-            });
+            const filtered = fmIssues.filter(i => 
+                i.symptom.toLowerCase().includes(search) || i.category.toLowerCase().includes(search)
+            );
 
-            grid.innerHTML = filtered.map(i => {
-                const count = logs.filter(l => l.issueId === i.id).length;
-                return `
-                <div class="issue-card bg-white p-6 rounded-xl shadow-md border-t-4 border-blue-900">
-                    <div class="flex justify-between items-start mb-2">
-                        <span class="text-xs font-bold text-slate-400">#${i.id} | ${i.category}</span>
-                        <span class="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-1 rounded">${count} Logs</span>
+            grid.innerHTML = filtered.map(i => `
+                <div class="issue-card bg-white p-6 rounded-xl shadow-md border-t-8 ${i.color} ${i.priority === 'High' ? 'priority-high' : ''}">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">${i.category}</span>
+                        ${i.priority === 'High' ? '<span class="bg-red-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold pulse-red">CRITICAL</span>' : ''}
                     </div>
-                    <h3 class="text-lg font-bold text-slate-800 mb-1">${i.symptom}</h3>
-                    <p class="text-xs text-slate-500 mb-4 italic">"${i.flaw}"</p>
+                    <h3 class="text-lg font-black text-slate-800 mb-1">${i.symptom}</h3>
+                    <p class="text-xs text-slate-500 mb-4">${i.flaw}</p>
                     
-                    <div class="space-y-2 mt-4 pt-4 border-t border-slate-100">
-                        <input type="text" id="staff-${i.id}" placeholder="Staff Member" class="w-full p-2 text-sm border rounded">
-                        <input type="text" id="parent-${i.id}" placeholder="Parent/Child" class="w-full p-2 text-sm border rounded">
-                        <textarea id="notes-${i.id}" placeholder="Notes/Incident Details..." class="w-full p-2 text-sm border rounded h-12"></textarea>
-                        <button onclick="logIncident(${i.id})" class="w-full bg-blue-900 text-white font-bold py-2 rounded hover:bg-black transition-colors text-sm">
-                            LOG INCIDENT
-                        </button>
+                    <div class="space-y-3 mt-4 pt-4 border-t border-slate-100">
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="text" id="ad-${i.id}" placeholder="AD Name" class="p-2 text-xs border rounded bg-slate-50">
+                            <input type="text" id="loc-${i.id}" placeholder="Location" class="p-2 text-xs border rounded bg-slate-50">
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <label class="text-[10px] font-bold text-slate-400">DTG:</label>
+                            <input type="datetime-local" id="dtg-${i.id}" class="flex-1 p-2 text-xs border rounded">
+                        </div>
+                        <textarea id="notes-${i.id}" placeholder="Describe the impact (e.g. '10 parents affected')..." class="w-full p-2 text-xs border rounded h-16"></textarea>
+                        
+                        <div class="flex items-center justify-between">
+                            <label class="flex items-center text-xs font-bold text-red-600">
+                                <input type="checkbox" id="pri-${i.id}" ${i.priority === 'High' ? 'checked' : ''} class="mr-2"> High Priority?
+                            </label>
+                            <button onclick="logIncident(${i.id})" class="bg-blue-900 text-white font-bold py-2 px-6 rounded-lg hover:bg-black transition-colors text-[10px] uppercase tracking-tighter">
+                                Log Issue
+                            </button>
+                        </div>
                     </div>
                 </div>
-            `}).join('');
-        }
-
-        function setFilter(cat) {
-            currentFilter = cat;
-            renderTabs();
-            renderIssues();
-        }
-
-        function filterIssues() {
-            renderIssues();
+            `).join('');
         }
 
         function logIncident(id) {
-            const staff = document.getElementById(`staff-${id}`).value;
-            const parent = document.getElementById(`parent-${id}`).value;
+            const adName = document.getElementById(`ad-${id}`).value;
+            const location = document.getElementById(`loc-${id}`).value;
+            const dtg = document.getElementById(`dtg-${id}`).value;
             const notes = document.getElementById(`notes-${id}`).value;
+            const isHigh = document.getElementById(`pri-${id}`).checked;
             
-            if(!staff) { alert("Please enter staff name"); return; }
+            if(!adName || !dtg) { alert("AD Name and Date/Time are required."); return; }
 
             const issue = fmIssues.find(i => i.id === id);
-            const newLog = {
-                timestamp: new Date().toLocaleString(),
-                issueId: id,
-                category: issue.category,
+            logs.push({
+                id: Date.now(),
                 symptom: issue.symptom,
-                staff: staff,
-                parent: parent,
-                notes: notes
-            };
+                ad: adName,
+                location: location,
+                dtg: dtg,
+                notes: notes,
+                reportedDate: new Date(),
+                priority: isHigh ? 'HIGH' : 'Normal',
+                status: 'Sent to Office',
+                officeNotes: '',
+                resolved: false
+            });
 
-            logs.push(newLog);
-            localStorage.setItem('i9Logs', JSON.stringify(logs));
-            
-            document.getElementById(`staff-${id}`).value = '';
-            document.getElementById(`parent-${id}`).value = '';
-            document.getElementById(`notes-${id}`).value = '';
-
-            updateMasterTally();
+            localStorage.setItem('i9FMTrackerLogs_v2', JSON.stringify(logs));
+            alert("Issue recorded successfully.");
+            updateStats();
             renderIssues();
         }
 
-        function updateMasterTally() {
-            document.getElementById('master-tally').innerText = logs.length;
+        function renderStatusTable() {
+            const body = document.getElementById('statusTableBody');
+            if(logs.length === 0) {
+                document.getElementById('empty-state').classList.remove('hidden');
+                body.innerHTML = '';
+                return;
+            }
+            document.getElementById('empty-state').classList.add('hidden');
+
+            body.innerHTML = logs.sort((a,b) => (a.resolved - b.resolved)).map(l => {
+                const age = Math.floor((new Date() - new Date(l.reportedDate)) / (1000 * 60 * 60 * 24));
+                const priorityClass = l.priority === 'HIGH' ? 'text-red-600 font-black' : 'text-slate-400';
+                
+                return `
+                <tr class="${l.resolved ? 'bg-emerald-50 opacity-50' : ''}">
+                    <td class="p-4 ${priorityClass}">
+                        ${l.priority === 'HIGH' ? '⚠️ CRITICAL' : 'Normal'}
+                    </td>
+                    <td class="p-4">
+                        <div class="font-bold text-blue-900">${age} Days Old</div>
+                        <div class="text-[10px]">${new Date(l.dtg).toLocaleDateString()}</div>
+                    </td>
+                    <td class="p-4">
+                        <div class="font-bold">${l.symptom}</div>
+                        <div class="text-[10px] text-slate-500">${l.location}</div>
+                        <div class="text-[10px] italic mt-1">"${l.notes}"</div>
+                    </td>
+                    <td class="p-4 font-medium">${l.ad}</td>
+                    <td class="p-4">
+                        <select onchange="updateLogStatus(${l.id}, this.value)" class="text-[10px] border p-1 rounded bg-white w-full">
+                            <option ${l.status === 'Sent to Office' ? 'selected' : ''}>Sent to Office</option>
+                            <option ${l.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                            <option ${l.status === 'Resolved' ? 'selected' : ''}>Resolved</option>
+                        </select>
+                        <input type="text" placeholder="Office reply..." value="${l.officeNotes}" 
+                               onblur="updateOfficeNotes(${l.id}, this.value)" class="text-[10px] w-full border-b mt-2 bg-transparent">
+                    </td>
+                    <td class="p-4">
+                        <button onclick="deleteLog(${l.id})" class="text-slate-300 hover:text-red-600">
+                             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M6 2a1 1 0 00-1 1v1H2v2h1v9a2 2 0 002 2h10a2 2 0 002-2V6h1V4h-3V3a1 1 0 00-1-1H6zm4 12a1 1 0 11-2 0 1 1 0 012 0zm0-4a1 1 0 11-2 0 1 1 0 012 0z"></path></svg>
+                        </button>
+                    </td>
+                </tr>
+            `}).join('');
         }
 
-        function exportToCSV() {
-            if(logs.length === 0) { alert("No logs to export!"); return; }
-            
-            let csv = "Timestamp,Issue ID,Category,Symptom,Staff,Parent/Child,Notes\n";
-            logs.forEach(l => {
-                csv += `"${l.timestamp}","${l.issueId}","${l.category}","${l.symptom}","${l.staff}","${l.parent}","${l.notes.replace(/"/g, '""')}"\n`;
-            });
+        function updateLogStatus(logId, val) {
+            const log = logs.find(l => l.id === logId);
+            log.status = val;
+            log.resolved = (val === 'Resolved');
+            localStorage.setItem('i9FMTrackerLogs_v2', JSON.stringify(logs));
+            updateStats();
+            renderStatusTable();
+        }
 
+        function updateOfficeNotes(logId, val) {
+            const log = logs.find(l => l.id === logId);
+            log.officeNotes = val;
+            localStorage.setItem('i9FMTrackerLogs_v2', JSON.stringify(logs));
+        }
+
+        function deleteLog(logId) {
+            if(confirm("Confirm Delete?")) {
+                logs = logs.filter(l => l.id !== logId);
+                localStorage.setItem('i9FMTrackerLogs_v2', JSON.stringify(logs));
+                renderStatusTable();
+                updateStats();
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('stat-total').innerText = logs.length;
+            document.getElementById('stat-pending').innerText = logs.filter(l => !l.resolved).length;
+            document.getElementById('stat-resolved').innerText = logs.filter(l => l.resolved).length;
+            document.getElementById('stat-high').innerText = logs.filter(l => l.priority === 'HIGH' && !l.resolved).length;
+        }
+
+        function filterIssues() { renderIssues(); }
+
+        function exportToCSV() {
+            if(logs.length === 0) return;
+            let csv = "Priority,Age,Issue,AD,Location,Status,Notes\n";
+            logs.forEach(l => {
+                const age = Math.floor((new Date() - new Date(l.reportedDate)) / (1000 * 60 * 60 * 24));
+                csv += `"${l.priority}","${age}","${l.symptom}","${l.ad}","${l.location}","${l.status}","${l.notes}"\n`;
+            });
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.setAttribute('hidden', '');
-            a.setAttribute('href', url);
-            a.setAttribute('download', `i9_Diagnostic_Report_${new Date().toLocaleDateString()}.csv`);
-            document.body.appendChild(a);
+            a.href = url;
+            a.download = `i9_FM_Impact_Report.csv`;
             a.click();
-            document.body.removeChild(a);
         }
 
         init();
