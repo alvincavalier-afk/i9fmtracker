@@ -3,295 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FM 2.0 Issue & Status Tracker</title>
+    <title>FM 2.0 Enterprise Issue Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
-        .issue-card:hover { transform: translateY(-2px); transition: all 0.2s; }
-        .tab-active { border-bottom: 4px solid white; font-weight: bold; opacity: 1 !important; }
-        .priority-high { border-left: 8px solid #ef4444; background-color: #fef2f2; }
-        .priority-med { border-left: 8px solid #f59e0b; }
-        .pulse-red { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+        body { font-family: 'Inter', sans-serif; }
+        /* Custom scrollbar for enterprise aesthetics */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
-        /* Category Colors */
-        .cat-home { border-top-color: #3b82f6; } 
-        .cat-mobile { border-top-color: #64748b; } 
-        .cat-data { border-top-color: #f59e0b; } 
-        .cat-money { border-top-color: #10b981; } 
-        .cat-ops { border-top-color: #8b5cf6; } 
+        /* Fade-in animation for app mounting */
+        #root:empty { display: none; }
+        #root { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
+<script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://esm.sh/@google/genai@^1.38.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "recharts": "https://esm.sh/recharts@^3.7.0",
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react": "https://esm.sh/react@^19.2.4"
+  }
+}
+</script>
 </head>
-<body class="bg-slate-100 font-sans text-slate-900">
+<body class="bg-slate-50 text-slate-900 overflow-x-hidden antialiased">
+    <!-- Root element for React application mounting -->
+    <div id="root"></div>
 
-    <nav class="bg-blue-900 text-white shadow-xl sticky top-0 z-50">
-        <div class="container mx-auto px-4">
-            <div class="flex flex-col md:flex-row justify-between items-center py-4">
-                <div class="flex items-center space-x-3 mb-4 md:mb-0">
-                    <div class="bg-white p-1 rounded">
-                        <span class="text-blue-900 font-black text-xl px-1">i9</span>
-                    </div>
-                    <h1 class="text-xl font-bold uppercase tracking-widest">FM 2.0 Issue & Status Tracker</h1>
-                </div>
-                <div class="flex space-x-8">
-                    <button onclick="switchView('report')" id="nav-report" class="tab-active opacity-75 hover:opacity-100 py-2 uppercase text-sm tracking-wider">Report Issue</button>
-                    <button onclick="switchView('status')" id="nav-status" class="opacity-75 hover:opacity-100 py-2 uppercase text-sm tracking-wider">Status Tracker</button>
-                </div>
-            </div>
-        </div>
-    </nav>
-
-    <div id="exec-summary" class="bg-white border-b border-slate-200 p-4">
-        <div class="container mx-auto grid grid-cols-2 md:grid-cols-5 gap-4 text-center">
-            <div>
-                <p class="text-xs text-slate-500 uppercase font-bold text-red-600">High Priority</p>
-                <p id="stat-high" class="text-2xl font-black text-red-600">0</p>
-            </div>
-            <div>
-                <p class="text-xs text-slate-500 uppercase font-bold">Active Issues</p>
-                <p id="stat-pending" class="text-2xl font-black text-blue-900">0</p>
-            </div>
-            <div>
-                <p class="text-xs text-slate-500 uppercase font-bold">Resolved</p>
-                <p id="stat-resolved" class="text-2xl font-black text-emerald-500">0</p>
-            </div>
-             <div>
-                <p class="text-xs text-slate-500 uppercase font-bold">Total Logs</p>
-                <p id="stat-total" class="text-2xl font-black text-slate-400">0</p>
-            </div>
-            <button onclick="exportToCSV()" class="bg-slate-800 hover:bg-black text-white font-bold rounded shadow-md text-xs uppercase px-4 py-2 my-auto">
-                Export CSV
-            </button>
-        </div>
-    </div>
-
-    <main class="container mx-auto p-4 md:p-8">
-        
-        <div id="view-report">
-            <div class="bg-white p-6 rounded-xl shadow-md mb-8 border-b-4 border-blue-900">
-                <label class="block text-sm font-bold text-slate-600 mb-2 italic">Quick Search: Type your problem (e.g., "refund", "registration", "slow")</label>
-                <input type="text" id="searchInput" onkeyup="filterIssues()" placeholder="Search symptoms to find the right card..." 
-                       class="w-full p-4 border-2 border-slate-200 rounded-lg focus:border-blue-500 outline-none text-lg">
-            </div>
-
-            <div id="issueGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                </div>
-        </div>
-
-        <div id="view-status" class="hidden">
-            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead class="bg-slate-800 text-white text-xs uppercase tracking-widest">
-                            <tr>
-                                <th class="p-4">Priority</th>
-                                <th class="p-4">Age / DTG</th>
-                                <th class="p-4">Issue / Location</th>
-                                <th class="p-4">AD/APD</th>
-                                <th class="p-4">Office Status</th>
-                                <th class="p-4">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="statusTableBody" class="divide-y divide-slate-200 text-sm">
-                            </tbody>
-                    </table>
-                </div>
-                <div id="empty-state" class="p-20 text-center text-slate-400 hidden">No active issues recorded.</div>
-            </div>
-        </div>
-    </main>
-
-    <script>
-        const fmIssues = [
-            { id: 26, category: "Financials", color: "cat-money", symptom: "Double Charge / Refund Issue", flaw: "System charges parent twice or refund button fails.", priority: "High" },
-            { id: 61, category: "Registration", color: "cat-money", symptom: "Registration Blocked", flaw: "Parents cannot complete sign-up or waiver doesn't save.", priority: "High" },
-            { id: 45, category: "Ops / Reports", color: "cat-ops", symptom: "Roster Builder Crash", flaw: "System crashes when trying to assign players to teams.", priority: "High" },
-            { id: 40, category: "Ops / Reports", color: "cat-ops", symptom: "Communication Failure", flaw: "Bulk emails or SMS alerts not sending to coaches/parents.", priority: "High" },
-            { id: 4, category: "General", color: "cat-home", symptom: "System Downtime / Spinner", flaw: "Entire system is offline or stuck on a loading screen.", priority: "High" },
-            { id: 6, category: "Mobile/Touch", color: "cat-mobile", symptom: "Mobile Layout Break", flaw: "Buttons are missing or cut off on mobile phones.", priority: "Med" },
-            { id: 17, category: "General", color: "cat-home", symptom: "Login Kickout", flaw: "System logs you out automatically every few minutes.", priority: "Med" }
-        ];
-
-        let logs = JSON.parse(localStorage.getItem('i9FMTrackerLogs_v2')) || [];
-
-        function init() {
-            renderIssues();
-            updateStats();
-        }
-
-        function switchView(view) {
-            document.getElementById('view-report').classList.toggle('hidden', view !== 'report');
-            document.getElementById('view-status').classList.toggle('hidden', view !== 'status');
-            document.getElementById('nav-report').classList.toggle('tab-active', view === 'report');
-            document.getElementById('nav-status').classList.toggle('tab-active', view === 'status');
-            if(view === 'status') renderStatusTable();
-        }
-
-        function renderIssues() {
-            const search = document.getElementById('searchInput').value.toLowerCase();
-            const grid = document.getElementById('issueGrid');
-            
-            const filtered = fmIssues.filter(i => 
-                i.symptom.toLowerCase().includes(search) || i.category.toLowerCase().includes(search)
-            );
-
-            grid.innerHTML = filtered.map(i => `
-                <div class="issue-card bg-white p-6 rounded-xl shadow-md border-t-8 ${i.color} ${i.priority === 'High' ? 'priority-high' : ''}">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-[10px] font-black uppercase tracking-widest text-slate-400">${i.category}</span>
-                        ${i.priority === 'High' ? '<span class="bg-red-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold pulse-red">CRITICAL</span>' : ''}
-                    </div>
-                    <h3 class="text-lg font-black text-slate-800 mb-1">${i.symptom}</h3>
-                    <p class="text-xs text-slate-500 mb-4">${i.flaw}</p>
-                    
-                    <div class="space-y-3 mt-4 pt-4 border-t border-slate-100">
-                        <div class="grid grid-cols-2 gap-2">
-                            <input type="text" id="ad-${i.id}" placeholder="AD Name" class="p-2 text-xs border rounded bg-slate-50">
-                            <input type="text" id="loc-${i.id}" placeholder="Location" class="p-2 text-xs border rounded bg-slate-50">
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <label class="text-[10px] font-bold text-slate-400">DTG:</label>
-                            <input type="datetime-local" id="dtg-${i.id}" class="flex-1 p-2 text-xs border rounded">
-                        </div>
-                        <textarea id="notes-${i.id}" placeholder="Describe the impact (e.g. '10 parents affected')..." class="w-full p-2 text-xs border rounded h-16"></textarea>
-                        
-                        <div class="flex items-center justify-between">
-                            <label class="flex items-center text-xs font-bold text-red-600">
-                                <input type="checkbox" id="pri-${i.id}" ${i.priority === 'High' ? 'checked' : ''} class="mr-2"> High Priority?
-                            </label>
-                            <button onclick="logIncident(${i.id})" class="bg-blue-900 text-white font-bold py-2 px-6 rounded-lg hover:bg-black transition-colors text-[10px] uppercase tracking-tighter">
-                                Log Issue
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function logIncident(id) {
-            const adName = document.getElementById(`ad-${id}`).value;
-            const location = document.getElementById(`loc-${id}`).value;
-            const dtg = document.getElementById(`dtg-${id}`).value;
-            const notes = document.getElementById(`notes-${id}`).value;
-            const isHigh = document.getElementById(`pri-${id}`).checked;
-            
-            if(!adName || !dtg) { alert("AD Name and Date/Time are required."); return; }
-
-            const issue = fmIssues.find(i => i.id === id);
-            logs.push({
-                id: Date.now(),
-                symptom: issue.symptom,
-                ad: adName,
-                location: location,
-                dtg: dtg,
-                notes: notes,
-                reportedDate: new Date(),
-                priority: isHigh ? 'HIGH' : 'Normal',
-                status: 'Sent to Office',
-                officeNotes: '',
-                resolved: false
-            });
-
-            localStorage.setItem('i9FMTrackerLogs_v2', JSON.stringify(logs));
-            alert("Issue recorded successfully.");
-            updateStats();
-            renderIssues();
-        }
-
-        function renderStatusTable() {
-            const body = document.getElementById('statusTableBody');
-            if(logs.length === 0) {
-                document.getElementById('empty-state').classList.remove('hidden');
-                body.innerHTML = '';
-                return;
-            }
-            document.getElementById('empty-state').classList.add('hidden');
-
-            body.innerHTML = logs.sort((a,b) => (a.resolved - b.resolved)).map(l => {
-                const age = Math.floor((new Date() - new Date(l.reportedDate)) / (1000 * 60 * 60 * 24));
-                const priorityClass = l.priority === 'HIGH' ? 'text-red-600 font-black' : 'text-slate-400';
-                
-                return `
-                <tr class="${l.resolved ? 'bg-emerald-50 opacity-50' : ''}">
-                    <td class="p-4 ${priorityClass}">
-                        ${l.priority === 'HIGH' ? '⚠️ CRITICAL' : 'Normal'}
-                    </td>
-                    <td class="p-4">
-                        <div class="font-bold text-blue-900">${age} Days Old</div>
-                        <div class="text-[10px]">${new Date(l.dtg).toLocaleDateString()}</div>
-                    </td>
-                    <td class="p-4">
-                        <div class="font-bold">${l.symptom}</div>
-                        <div class="text-[10px] text-slate-500">${l.location}</div>
-                        <div class="text-[10px] italic mt-1">"${l.notes}"</div>
-                    </td>
-                    <td class="p-4 font-medium">${l.ad}</td>
-                    <td class="p-4">
-                        <select onchange="updateLogStatus(${l.id}, this.value)" class="text-[10px] border p-1 rounded bg-white w-full">
-                            <option ${l.status === 'Sent to Office' ? 'selected' : ''}>Sent to Office</option>
-                            <option ${l.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
-                            <option ${l.status === 'Resolved' ? 'selected' : ''}>Resolved</option>
-                        </select>
-                        <input type="text" placeholder="Office reply..." value="${l.officeNotes}" 
-                               onblur="updateOfficeNotes(${l.id}, this.value)" class="text-[10px] w-full border-b mt-2 bg-transparent">
-                    </td>
-                    <td class="p-4">
-                        <button onclick="deleteLog(${l.id})" class="text-slate-300 hover:text-red-600">
-                             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M6 2a1 1 0 00-1 1v1H2v2h1v9a2 2 0 002 2h10a2 2 0 002-2V6h1V4h-3V3a1 1 0 00-1-1H6zm4 12a1 1 0 11-2 0 1 1 0 012 0zm0-4a1 1 0 11-2 0 1 1 0 012 0z"></path></svg>
-                        </button>
-                    </td>
-                </tr>
-            `}).join('');
-        }
-
-        function updateLogStatus(logId, val) {
-            const log = logs.find(l => l.id === logId);
-            log.status = val;
-            log.resolved = (val === 'Resolved');
-            localStorage.setItem('i9FMTrackerLogs_v2', JSON.stringify(logs));
-            updateStats();
-            renderStatusTable();
-        }
-
-        function updateOfficeNotes(logId, val) {
-            const log = logs.find(l => l.id === logId);
-            log.officeNotes = val;
-            localStorage.setItem('i9FMTrackerLogs_v2', JSON.stringify(logs));
-        }
-
-        function deleteLog(logId) {
-            if(confirm("Confirm Delete?")) {
-                logs = logs.filter(l => l.id !== logId);
-                localStorage.setItem('i9FMTrackerLogs_v2', JSON.stringify(logs));
-                renderStatusTable();
-                updateStats();
-            }
-        }
-
-        function updateStats() {
-            document.getElementById('stat-total').innerText = logs.length;
-            document.getElementById('stat-pending').innerText = logs.filter(l => !l.resolved).length;
-            document.getElementById('stat-resolved').innerText = logs.filter(l => l.resolved).length;
-            document.getElementById('stat-high').innerText = logs.filter(l => l.priority === 'HIGH' && !l.resolved).length;
-        }
-
-        function filterIssues() { renderIssues(); }
-
-        function exportToCSV() {
-            if(logs.length === 0) return;
-            let csv = "Priority,Age,Issue,AD,Location,Status,Notes\n";
-            logs.forEach(l => {
-                const age = Math.floor((new Date() - new Date(l.reportedDate)) / (1000 * 60 * 60 * 24));
-                csv += `"${l.priority}","${age}","${l.symptom}","${l.ad}","${l.location}","${l.status}","${l.notes}"\n`;
-            });
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `i9_FM_Impact_Report.csv`;
-            a.click();
-        }
-
-        init();
-    </script>
+    <!-- Entry module for the application -->
+    <script type="module" src="index.tsx"></script>
 </body>
 </html>
